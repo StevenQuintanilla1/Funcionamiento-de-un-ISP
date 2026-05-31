@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagrama de Red ISP - MikroTik</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Fondo estilo lienzo/blueprint para el diagrama */
+        .bg-grid {
+            background-size: 40px 40px;
+            background-image: 
+                linear-gradient(to right, rgba(203, 213, 225, 0.3) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(203, 213, 225, 0.3) 1px, transparent 1px);
+        }
+
+        /* Animaciones y colores dinámicos de los nodos mediante CSS variables */
+        .node { 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            border-color: #e2e8f0; /* slate-200 por defecto */
+        }
+        .node:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 12px 20px -3px rgba(0, 0, 0, 0.08); 
+            border-color: var(--node-color, #94a3b8); 
+        }
+        .node.active { 
+            border-color: var(--node-color, #3b82f6); 
+            background-color: #f8fafc; 
+            box-shadow: 0 0 0 4px var(--node-ring, rgba(59, 130, 246, 0.15)), 0 10px 15px -3px rgba(0, 0, 0, 0.1); 
+        }
+        
+        /* Conectores rediseñados */
+        .connector { width: 3px; height: 32px; background-color: #cbd5e1; margin: 0 auto; border-radius: 4px; }
+        
+        /* Custom scrollbar minimalista */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Estilo para el código estilo consola */
+        .code-theme {
+            background-color: #0f172a;
+            color: #38bdf8;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 h-screen overflow-hidden flex flex-col relative">
+
+    <header class="bg-white border-b border-slate-200 p-4 md:p-5 shadow-sm z-30 relative shrink-0">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div>
+                <h1 class="text-xl md:text-2xl font-bold flex items-center gap-3 text-slate-800 tracking-tight">
+                    <div class="bg-blue-600 p-2 rounded-lg shadow-md shadow-blue-200 text-white flex items-center justify-center">
+                        <i class="fas fa-network-wired text-sm md:text-base"></i>
+                    </div>
+                    Arquitectura de Red ISP
+                </h1>
+                <p class="text-xs md:text-sm text-slate-500 mt-2 md:mt-1 ml-0 md:ml-12">Topología basada en MikroTik. Interactúa con los nodos para explorar la configuración.</p>
+            </div>
+            <div class="hidden md:flex gap-2">
+                <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full flex items-center gap-1"><i class="fas fa-circle text-[8px]"></i> En línea</span>
+            </div>
+        </div>
+    </header>
+
+    <button id="open-sidebar-btn" onclick="openSidebar()" class="absolute top-24 right-6 z-40 bg-white border border-slate-200 shadow-xl rounded-full w-12 h-12 flex items-center justify-center text-slate-600 hover:text-blue-600 hover:bg-blue-50 hover:scale-110 transition-all duration-300 scale-0 opacity-0" title="Ver Panel de Detalles">
+        <i class="fas fa-list-ul text-lg"></i>
+    </button>
+
+    <div class="flex flex-1 overflow-hidden relative w-full">
+        
+        <main class="flex-1 overflow-auto bg-slate-50 bg-grid relative z-10 transition-all duration-300">
+            <div class="min-w-[700px] p-8 flex flex-col items-center mx-auto">
+                
+                <div class="text-center mb-3">
+                    <span class="bg-white text-[10px] text-slate-500 px-4 py-1.5 rounded-full uppercase font-bold tracking-widest border border-slate-200 shadow-sm">1. Salida a Internet</span>
+                </div>
+                <div class="flex gap-12 relative w-full justify-center">
+                    <div class="node bg-white border-2 rounded-2xl p-5 w-52 text-center cursor-pointer relative z-10 flex flex-col items-center group" style="--node-color: #3b82f6; --node-ring: rgba(59, 130, 246, 0.2);" onclick="showDetails('p1', this)">
+                        <div class="h-12 w-12 bg-slate-50 rounded-full flex items-center justify-center mb-3 group-hover:bg-blue-50 transition-colors">
+                            <i class="fas fa-cloud text-2xl text-slate-400 group-hover:text-blue-500 transition-colors"></i>
+                        </div>
+                        <h3 class="font-bold text-slate-800">Proveedor 1</h3>
+                        <p class="text-xs font-medium text-blue-600 mt-1 bg-blue-50 px-2 py-1 rounded-md">Internet</p>
+                        <span class="absolute -top-2 -right-2 bg-blue-500 text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-sm">Principal</span>
+                    </div>
+                    <div class="node bg-white border-2 rounded-2xl p-5 w-52 text-center cursor-pointer relative z-10 flex flex-col items-center group" style="--node-color: #f97316; --node-ring: rgba(249, 115, 22, 0.2);" onclick="showDetails('p2', this)">
+                        <div class="h-12 w-12 bg-slate-50 rounded-full flex items-center justify-center mb-3 group-hover:bg-orange-50 transition-colors">
+                            <i class="fas fa-cloud text-2xl text-slate-400 group-hover:text-orange-500 transition-colors"></i>
+                        </div>
+                        <h3 class="font-bold text-slate-800">Proveedor 2</h3>
+                        <p class="text-xs font-medium text-orange-600 mt-1 bg-orange-50 px-2 py-1 rounded-md">Internet</p>
+                        <span class="absolute -top-2 -right-2 bg-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-sm">Respaldo</span>
+                    </div>
+                </div>
+
+                <div class="flex w-64 justify-between px-14">
+                    <div class="connector"></div>
+                    <div class="connector"></div>
+                </div>
+
+                <div class="text-center mb-3">
+                    <span class="bg-white text-[10px] text-slate-500 px-4 py-1.5 rounded-full uppercase font-bold tracking-widest border border-slate-200 shadow-sm">2. Frontera</span>
+                </div>
+                <div class="node bg-white border-2 rounded-2xl p-5 w-72 text-center cursor-pointer flex flex-col items-center group" style="--node-color: #ef4444; --node-ring: rgba(239, 68, 68, 0.2);" onclick="showDetails('borde', this)">
+                    <div class="h-12 w-12 bg-slate-50 rounded-full flex items-center justify-center mb-3 group-hover:bg-red-50 transition-colors">
+                        <i class="fas fa-shield-alt text-2xl text-slate-400 group-hover:text-red-500 transition-colors"></i>
+                    </div>
+                    <h3 class="font-bold text-slate-800 text-lg">Router Borde</h3>
+                    <p class="text-xs text-slate-500 mt-1">Controla la salida a Internet</p>
+                </div>
+
+                <div class="connector"></div>
+
+                <div class="text-center mb-3">
+                    <span class="bg-white text-[10px] text-slate-500 px-4 py-1.5 rounded-full uppercase font-bold tracking-widest border border-slate-200 shadow-sm">3. Núcleo</span>
+                </div>
+                <div class="node bg-white border-2 rounded-2xl p-5 w-72 text-center cursor-pointer flex flex-col items-center group" style="--node-color: #a855f7; --node-ring: rgba(168, 85, 247, 0.2);" onclick="showDetails('core', this)">
+                    <div class="h-12 w-12 bg-slate-50 rounded-full flex items-center justify-center mb-3 group-hover:bg-purple-50 transition-colors">
+                        <i class="fas fa-server text-2xl text-slate-400 group-hover:text-purple-500 transition-colors"></i>
+                    </div>
+                    <h3 class="font-bold text-slate-800 text-lg">Router Core</h3>
+                    <p class="text-xs text-slate-500 mt-1">Transporta el tráfico de la red</p>
+                </div>
+
+                <div class="connector"></div>
+
+                <div class="text-center mb-3">
+                    <span class="bg-white text-[10px] text-slate-500 px-4 py-1.5 rounded-full uppercase font-bold tracking-widest border border-slate-200 shadow-sm">4. Agregación</span>
+                </div>
+                <div class="node bg-white border-2 rounded-2xl p-5 w-72 text-center cursor-pointer flex flex-col items-center group" style="--node-color: #22c55e; --node-ring: rgba(34, 197, 94, 0.2);" onclick="showDetails('bng', this)">
+                    <div class="h-12 w-12 bg-slate-50 rounded-full flex items-center justify-center mb-3 group-hover:bg-green-50 transition-colors">
+                        <i class="fas fa-users-cog text-2xl text-slate-400 group-hover:text-green-500 transition-colors"></i>
+                    </div>
+                    <h3 class="font-bold text-slate-800 text-lg">Router BNG</h3>
+                    <h4 class="font-bold text-slate-800 text-lg">(Broadband Network Gateway)</h4>
+                    <p class="text-xs text-slate-500 mt-1">Administra las conexiones de clientes</p>
+                </div>
+
+                <div class="connector"></div>
+
+                <div class="text-center mb-3">
+                    <span class="bg-white text-[10px] text-slate-500 px-4 py-1.5 rounded-full uppercase font-bold tracking-widest border border-slate-200 shadow-sm">5. Acceso de clientes</span>
+                </div>
+                <div class="flex gap-6 relative w-full justify-center max-w-2xl">
+                    <div class="absolute top-0 w-3/4 h-[3px] bg-slate-300 z-0 rounded-full"></div> 
+                    <div class="w-3/4 flex justify-between absolute top-0">
+                        <div class="w-[3px] h-5 bg-slate-300 rounded-b-full"></div>
+                        <div class="w-[3px] h-5 bg-slate-300 rounded-b-full"></div>
+                        <div class="w-[3px] h-5 bg-slate-300 rounded-b-full"></div>
+                    </div>
+
+                    <div class="node mt-5 bg-white border-2 rounded-xl p-4 w-44 text-center cursor-pointer relative z-10 group" style="--node-color: #3b82f6; --node-ring: rgba(59, 130, 246, 0.2);" onclick="showDetails('cpe1', this)">
+                        <i class="fas fa-home text-xl text-slate-400 mb-2 group-hover:text-blue-500 transition-colors"></i>
+                        <h3 class="font-bold text-sm text-slate-800">Cliente 1</h3>
+                        <div class="flex flex-col gap-1 mt-2">
+                            <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded">VLAN 100</span>
+                            <span class="text-[10px] bg-blue-50 text-blue-600 font-semibold px-2 py-0.5 rounded">Plan Básico</span>
+                                                        <span class="text-[10px] bg-blue-50 text-blue-600 font-semibold px-2 py-0.5 rounded">5 Megas</span>
+                        </div>
+                    </div>
+                    <div class="node mt-5 bg-white border-2 rounded-xl p-4 w-44 text-center cursor-pointer relative z-10 group" style="--node-color: #6366f1; --node-ring: rgba(99, 102, 241, 0.2);" onclick="showDetails('cpe2', this)">
+                        <i class="fas fa-home text-xl text-slate-400 mb-2 group-hover:text-blue-500 transition-colors"></i>
+                        <h3 class="font-bold text-sm text-slate-800">Cliente 2</h3>
+                        <div class="flex flex-col gap-1 mt-2">
+                            <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded">VLAN 200</span>
+                            <span class="text-[10px] bg-indigo-50 text-indigo-600 font-semibold px-2 py-0.5 rounded">Plan Intermedio</span>
+                            <span class="text-[10px] bg-indigo-50 text-indigo-600 font-semibold px-2 py-0.5 rounded">10 Megas</span>
+                        </div>
+                    </div>
+                    <div class="node mt-5 bg-white border-2 rounded-xl p-4 w-44 text-center cursor-pointer relative z-10 group" style="--node-color: #a855f7; --node-ring: rgba(168, 85, 247, 0.2);" onclick="showDetails('cpe3', this)">
+                       <i class="fas fa-home text-xl text-slate-400 mb-2 group-hover:text-blue-500 transition-colors"></i>
+                        <h3 class="font-bold text-sm text-slate-800">Cliente 3</h3>
+                        <div class="flex flex-col gap-1 mt-2">
+                            <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded">VLAN 300</span>
+                            <span class="text-[10px] bg-purple-50 text-purple-600 font-semibold px-2 py-0.5 rounded">Plan Avanzado</span>
+                            <span class="text-[10px] bg-purple-50 text-purple-600 font-semibold px-2 py-0.5 rounded">15 Megas</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-8 mb-16"></div> 
+            </div>
+        </main>
+
+        <div id="mobile-backdrop" class="fixed inset-0 bg-slate-900/40 z-40 hidden opacity-0 transition-opacity duration-300 md:hidden" onclick="closeSidebar()"></div>
+
+        <aside id="sidebar" class="w-[90%] sm:w-[400px] bg-white border-l border-slate-200 flex flex-col shadow-2xl z-50 md:z-20 fixed inset-y-0 right-0 md:relative transform translate-x-full md:translate-x-0 md:mr-0 transition-all duration-300 ease-in-out h-full shrink-0">
+            
+            <div id="welcome-panel" class="flex-1 flex flex-col items-center justify-center p-10 text-center text-slate-500 bg-slate-50/50 relative h-full">
+                <button onclick="closeSidebar()" class="absolute top-5 right-5 w-8 h-8 flex items-center justify-center rounded-full bg-slate-200/60 text-slate-500 hover:bg-slate-300 hover:text-slate-800 transition-colors focus:outline-none" title="Cerrar panel y ver diagrama completo">
+                    <i class="fas fa-times"></i>
+                </button>
+
+                <div class="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mb-6 shadow-inner">
+                    <i class="fas fa-mouse-pointer text-4xl text-blue-300"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-700 mb-3 tracking-tight">Selecciona un Nodo</h2>
+                <p class="text-slate-500 leading-relaxed max-w-sm">
+                    Haz clic en cualquier router o nivel del diagrama para descubrir su función específica y explorar su configuración en <strong class="text-slate-700">MikroTik RouterOS</strong>.
+                </p>
+            </div>
+
+            <div id="details-panel" class="hidden flex-1 flex flex-col h-full overflow-hidden bg-white relative">
+                
+                <div class="p-6 bg-white border-b border-slate-100 shadow-sm relative z-10 flex-shrink-0">
+                    <button onclick="closeSidebar()" class="absolute top-5 right-5 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors focus:outline-none" title="Cerrar detalles">
+                        <i class="fas fa-times"></i>
+                    </button>
+
+                    <div class="flex items-center gap-4 mb-2 pr-8">
+                        <div id="detail-icon-container" class="h-12 w-12 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-2xl shadow-sm flex-shrink-0">
+                            <span id="detail-icon"></span>
+                        </div>
+                        <div>
+                            <span id="detail-layer" class="text-[10px] font-bold px-2 py-1 bg-slate-100 text-slate-500 rounded uppercase tracking-wider mb-1 inline-block">Capa</span>
+                            <h2 id="detail-title" class="text-xl md:text-2xl font-bold text-slate-800 tracking-tight leading-tight">Título</h2>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-6 overflow-y-auto flex-1 bg-slate-50/50">
+                    
+                    <div class="mb-8">
+                        <h3 class="text-xs uppercase tracking-widest text-slate-400 font-bold mb-3 flex items-center gap-2">
+                            <i class="fas fa-info-circle"></i> Funcionamiento
+                        </h3>
+                        <p id="detail-desc" class="text-sm text-slate-600 leading-relaxed bg-white p-4 rounded-xl border border-slate-200 shadow-sm"></p>
+                    </div>
+
+                    <div class="pb-6">
+                        <h3 class="text-xs uppercase tracking-widest text-slate-400 font-bold mb-3 flex items-center gap-2">
+                            <i class="fas fa-terminal"></i> Script de Configuración
+                        </h3>
+                        
+                        <div class="code-theme rounded-xl border border-slate-800 p-1 shadow-lg relative group overflow-hidden flex flex-col">
+                            <div class="flex items-center justify-between px-3 py-2 bg-slate-800/50 border-b border-slate-800">
+                                <div class="flex items-center gap-1.5">
+                                    <div class="w-2.5 h-2.5 rounded-full bg-red-500/80"></div>
+                                    <div class="w-2.5 h-2.5 rounded-full bg-yellow-500/80"></div>
+                                    <div class="w-2.5 h-2.5 rounded-full bg-green-500/80"></div>
+                                    <span class="text-[10px] text-slate-400 font-mono ml-2">terminal ~ routeros</span>
+                                </div>
+                                <button id="copy-btn" onclick="copyCode()" class="text-slate-400 hover:text-white transition-colors focus:outline-none flex items-center gap-1.5" title="Copiar al portapapeles">
+                                    <span id="copy-text" class="text-[10px] uppercase font-bold tracking-wider hidden sm:block">Copiar</span>
+                                    <i class="fas fa-copy text-sm"></i>
+                                </button>
+                            </div>
+                            
+                            <div class="p-4 overflow-x-auto w-full">
+                                <pre><code id="detail-code" class="text-xs font-mono whitespace-pre leading-relaxed block"></code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+    </div>
+
+    <script>
+        const networkData = {
+            p1: { title: "Proveedor 1", layer: "Capa 1: Salida a Internet", icon: "<i class='fas fa-cloud'></i>", color: "blue", desc: "Este es el enlace principal hacia Internet. Todo el tráfico saldrá por aquí de forma normal, porque tiene prioridad sobre el enlace de respaldo. Si este proveedor deja de responder, el router de borde detecta la falla y cambia automáticamente al segundo enlace. Además, aquí se aplica NAT para convertir las direcciones privadas internas en una dirección válida para Internet.", code: `/system identity set name=Proveedor-1\n/ip service disable telnet,ftp,www,api,api-ssl\n/system clock set time-zone-name=America/El_Salvador\n/user add name=Proveedor1 password=Prov1 group=full\n/ip dhcp-client add interface=ether3 disabled=no comment="Salida Temporal"\n\n/ip dhcp-client add interface=ether1 disabled=no comment="Salida a Internet"\n/ip address add address=172.16.100.1/30 interface=ether2\n/ip firewall nat add chain=srcnat out-interface=ether1 action=masquerade` },
+            p2: { title: "Proveedor 2", layer: "Capa 1: Salida a Internet", icon: "<i class='fas fa-cloud'></i>", color: "orange", desc: "Este enlace funciona como respaldo del proveedor principal. Normalmente permanece inactivo, pero entra en funcionamiento si el primer enlace falla. Gracias a esto, la red mantiene conectividad con Internet sin interrupciones. El cambio entre enlaces se realiza de forma automática para asegurar continuidad del servicio.", code: `/system identity set name=Proveedor-2\n/ip service disable telnet,ftp,www,api,api-ssl\n/system clock set time-zone-name=America/El_Salvador\n/user add name=Proveedor2 password=Prov2 group=full\n/ip dhcp-client add interface=ether3 disabled=no\n\n/ip dhcp-client add interface=ether1 disabled=no\n/ip address add address=172.16.101.1/30 interface=ether2\n/ip firewall nat add chain=srcnat out-interface=ether1 action=masquerade` },
+            borde: { title: "Router de Borde", layer: "Capa 2: Frontera", icon: "<i class='fas fa-shield-alt'></i>", color: "red", desc: "Este router es el punto de salida de la red hacia Internet y también el límite de seguridad entre la red interna y el exterior. Su función es decidir por cuál proveedor salir, aplicar CGNAT para compartir direcciones públicas entre varios clientes, y anunciar la ruta por defecto hacia el núcleo mediante OSPF. También actúa como primera barrera de filtrado con reglas de firewall.", code: `# Omitimos la creación de usuario e identidad por brevedad...\n/ip address add address=10.255.255.1/32 interface=Loopback0\n/ip address add address=172.16.100.2/30 interface=ether1 comment="WAN 1"\n/ip address add address=172.16.101.2/30 interface=ether2 comment="WAN 2"\n/ip address add address=10.0.1.1/30 interface=ether3 comment="Hacia Core A"\n/ip address add address=10.0.2.1/30 interface=ether4 comment="Hacia Core B"\n\n# Failover Activo/Pasivo\n/ip route add dst-address=0.0.0.0/0 gateway=172.16.100.1 distance=1 check-gateway=ping\n/ip route add dst-address=0.0.0.0/0 gateway=172.16.101.1 distance=2 check-gateway=ping\n\n# CGNAT y NAT\n/interface list add name=WAN-LIST\n/interface list member add interface=ether1 list=WAN-LIST\n/interface list member add interface=ether2 list=WAN-LIST\n/ip firewall nat add chain=srcnat src-address=100.64.0.0/10 out-interface-list=WAN-LIST action=masquerade\n/ip firewall nat add chain=srcnat src-address=10.0.0.0/8 out-interface-list=WAN-LIST action=masquerade\n\n# OSPF: Inyecta ruta por defecto\n/routing ospf instance add name=ospf-core router-id=10.255.255.1 originate-default=always\n/routing ospf area add name=backbone instance=ospf-core\n/routing ospf interface-template add area=backbone interfaces=ether3 type=ptp\n/routing ospf interface-template add area=backbone interfaces=ether4 type=ptp` },
+            core: { title: "Router Core", layer: "Capa 3: Núcleo", icon: "<i class='fas fa-server'></i>", color: "purple", desc: "Este es el corazón de la red. Su tarea principal es transportar tráfico entre las distintas capas de manera rápida y estable. No se encarga de traducir direcciones ni de hacer funciones de acceso; solo enruta el tráfico interno. Gracias a OSPF, las rutas se actualizan automáticamente y la red puede recuperarse si algún enlace falla.", code: `/system identity set name=Core\n\n# Direccionamiento Troncal\n/interface bridge add name=Loopback0\n/ip address add address=10.255.255.2/32 interface=Loopback0\n/ip address add address=10.0.1.2/30 interface=ether1 comment="Troncal A hacia Borde"\n/ip address add address=10.0.2.2/30 interface=ether2 comment="Troncal B hacia Borde"\n/ip address add address=10.0.3.1/30 interface=ether3 comment="Troncal C hacia BNG"\n/ip address add address=10.0.4.1/30 interface=ether4 comment="Troncal D hacia BNG"\n\n# OSPF v7 Totalmente dinámico en 4 enlaces\n/routing ospf instance add name=ospf-core router-id=10.255.255.2\n/routing ospf area add name=backbone instance=ospf-core\n/routing ospf interface-template add area=backbone interfaces=ether1 type=ptp\n/routing ospf interface-template add area=backbone interfaces=ether2 type=ptp\n/routing ospf interface-template add area=backbone interfaces=ether3 type=ptp\n/routing ospf interface-template add area=backbone interfaces=ether4 type=ptp\n/routing ospf interface-template add area=backbone interfaces=Loopback0 passive` },
+            bng: { title: "Router BNG", layer: "Capa 4: Agregación", icon: "<i class='fas fa-users-cog'></i>", color: "green", desc: "Este router administra la conexión de los clientes. Aquí se reciben las sesiones PPPoE, separadas por VLAN según el grupo de usuarios. También se asignan direcciones del rango CGNAT, se aplican los perfiles de velocidad y se controla el acceso de cada cliente. En esta capa se concentra la lógica que convierte múltiples usuarios individuales en servicios ordenados y administrados.", code: `# Configuración hacia Core y OSPF\n/ip address add address=10.0.3.2/30 interface=ether1\n/ip address add address=10.0.4.2/30 interface=ether2\n/ip route add dst-address=100.64.0.0/10 blackhole comment="Agrupacion Pool CGNAT"\n/routing ospf instance add name=ospf-core router-id=10.255.255.3 redistribute=static\n\n# VLANs en puerto de distribución\n/interface vlan add name=vlan100-cli1 interface=ether3 vlan-id=100\n/interface vlan add name=vlan200-cli2 interface=ether3 vlan-id=200\n/interface vlan add name=vlan300-cli3 interface=ether3 vlan-id=300\n\n# PPPoE Server y Perfiles de Velocidad\n/ip pool add name=Pool-PPPoE-General ranges=100.64.1.10-100.64.1.250\n/ppp profile add name="Plan_Basico" local-address=100.64.1.1 remote-address=Pool-PPPoE-General rate-limit="1M/5M"\n/ppp profile add name="Plan_Intermedio" local-address=100.64.1.1 remote-address=Pool-PPPoE-General rate-limit="3M/10M"\n/ppp profile add name="Plan_Avanzado" local-address=100.64.1.1 remote-address=Pool-PPPoE-General rate-limit="5M/15M"\n\n# Servidores PPPoE en VLANs\n/interface pppoe-server server add interface=vlan100-cli1 service-name="Servicio-Cliente1" default-profile=Plan_Basico\n/interface pppoe-server server add interface=vlan200-cli2 service-name="Servicio-Cliente2" default-profile=Plan_Intermedio\n/interface pppoe-server server add interface=vlan300-cli3 service-name="Servicio-Cliente3" default-profile=Plan_Avanzado\n\n# Fix MTU Clientes\n/ip firewall mangle add chain=forward protocol=tcp tcp-flags=syn out-interface=all-ppp action=change-mss new-mss=clamp-to-pmtu tcp-mss=!0-1452` },
+            cpe1: { title: "CPE Cliente 1", layer: "Capa 5: Acceso", icon: "<i class='fas fa-wifi'></i>", color: "blue", desc: "Este equipo representa el router del cliente. Se conecta al ISP mediante PPPoE sobre la VLAN 100 y, al autenticarse, recibe acceso a la red del proveedor. Dentro de la casa, administra su propia red local con DHCP y utiliza NAT para que todos los dispositivos salgan a Internet usando una sola conexión.", code: `/system identity set name=CPE-Cliente1\n\n# Enlace PPPoE hacia el ISP\n/interface vlan add name=vlan100-isp interface=ether1 vlan-id=100\n/interface pppoe-client add name=pppoe-out1 interface=vlan100-isp user=user1 password=pass1 add-default-route=yes disabled=no\n\n# Red LAN Doméstica\n/ip address add address=192.168.10.1/24 interface=ether2\n/ip pool add name=pool-lan ranges=192.168.10.10-192.168.10.50\n/ip dhcp-server add name=dhcp-lan interface=ether2 address-pool=pool-lan disabled=no\n/ip dhcp-server network add address=192.168.10.0/24 gateway=192.168.10.1 dns-server=8.8.8.8\n\n# NAT para los dispositivos de casa\n/ip firewall nat add chain=srcnat out-interface=pppoe-out1 action=masquerade` },
+            cpe2: { title: "CPE Cliente 2", layer: "Capa 5: Acceso", icon: "<i class='fas fa-wifi'></i>", color: "indigo", desc: "Este cliente funciona igual que el primero, pero viaja por la VLAN 200. Esto permite mantenerlo separado de otros usuarios a nivel de red y evita que comparta el mismo dominio de broadcast. Al autenticarse, recibe el perfil de velocidad intermedio y administra una red local independiente para sus dispositivos.", code: `/system identity set name=CPE-Cliente2\n\n# Enlace PPPoE hacia el ISP\n/interface vlan add name=vlan200-isp interface=ether1 vlan-id=200\n/interface pppoe-client add name=pppoe-out1 interface=vlan200-isp user=user2 password=pass2 add-default-route=yes disabled=no\n\n# Red LAN Doméstica\n/ip address add address=192.168.20.1/24 interface=ether2\n/ip pool add name=pool-lan ranges=192.168.20.10-192.168.20.50\n/ip dhcp-server add name=dhcp-lan interface=ether2 address-pool=pool-lan disabled=no\n/ip dhcp-server network add address=192.168.20.0/24 gateway=192.168.20.1 dns-server=8.8.8.8\n\n# NAT para los dispositivos de casa\n/ip firewall nat add chain=srcnat out-interface=pppoe-out1 action=masquerade` },
+            cpe3: { title: "CPE Cliente 3", layer: "Capa 5: Acceso", icon: "<i class='fas fa-wifi'></i>", color: "purple", desc: "Este es el tercer cliente de la simulación y utiliza la VLAN 300. Se conecta al BNG mediante PPPoE, recibe el plan más alto y mantiene su red doméstica separada de los demás usuarios. Su tráfico sale primero al BNG, luego atraviesa el Core, pasa por el Router de Borde y finalmente sale a Internet por el proveedor activo.", code: `/system identity set name=CPE-Cliente3\n\n# Enlace PPPoE hacia el ISP\n/interface vlan add name=vlan300-isp interface=ether1 vlan-id=300\n/interface pppoe-client add name=pppoe-out1 interface=vlan300-isp user=user3 password=pass3 add-default-route=yes disabled=no\n\n# Red LAN Doméstica\n/ip address add address=192.168.30.1/24 interface=ether2\n/ip pool add name=pool-lan ranges=192.168.30.10-192.168.30.50\n/ip dhcp-server add name=dhcp-lan interface=ether2 address-pool=pool-lan disabled=no\n/ip dhcp-server network add address=192.168.30.0/24 gateway=192.168.30.1 dns-server=8.8.8.8\n\n# NAT para los dispositivos de casa\n/ip firewall nat add chain=srcnat out-interface=pppoe-out1 action=masquerade` }
+        };
+
+        function showDetails(id, element) {
+            // Asegurarnos de que el sidebar esté abierto
+            openSidebar();
+
+            // Actualizar nodos activos
+            document.querySelectorAll('.node').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+
+            // Preparar UI
+            document.getElementById('welcome-panel').classList.add('hidden');
+            document.getElementById('details-panel').classList.remove('hidden');
+
+            // Cargar Info
+            const data = networkData[id];
+            document.getElementById('detail-title').textContent = data.title;
+            document.getElementById('detail-icon').innerHTML = data.icon;
+            document.getElementById('detail-layer').textContent = data.layer;
+            document.getElementById('detail-desc').textContent = data.desc;
+            document.getElementById('detail-code').textContent = data.code;
+            
+            // Colorear Icono Dinámicamente
+            const iconContainer = document.getElementById('detail-icon-container');
+            iconContainer.className = `h-12 w-12 rounded-lg bg-${data.color}-50 text-${data.color}-600 flex items-center justify-center text-2xl shadow-sm flex-shrink-0`;
+
+            resetCopyButton();
+        }
+
+        function closeSidebar() {
+            // Limpiar selección
+            document.querySelectorAll('.node').forEach(el => el.classList.remove('active'));
+            
+            // Cerrar Sidebar animando el margin negativo en desktop y translate en móvil
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.add('translate-x-full', 'md:-mr-[400px]');
+            sidebar.classList.remove('md:translate-x-0', 'md:mr-0');
+
+            // Animación de Backdrop (Móvil)
+            const backdrop = document.getElementById('mobile-backdrop');
+            backdrop.classList.add('opacity-0');
+            setTimeout(() => { backdrop.classList.add('hidden'); }, 300);
+
+            // Mostrar el botón flotante para volver a abrir
+            const openBtn = document.getElementById('open-sidebar-btn');
+            openBtn.classList.remove('scale-0', 'opacity-0');
+            openBtn.classList.add('scale-100', 'opacity-100');
+
+            // Restaurar a la vista de bienvenida internamente
+            setTimeout(() => {
+                document.getElementById('details-panel').classList.add('hidden');
+                document.getElementById('welcome-panel').classList.remove('hidden');
+            }, 300);
+        }
+
+        function openSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('mobile-backdrop');
+            const openBtn = document.getElementById('open-sidebar-btn');
+
+            // Ocultar botón flotante
+            openBtn.classList.add('scale-0', 'opacity-0');
+            openBtn.classList.remove('scale-100', 'opacity-100');
+
+            // Abrir Sidebar
+            sidebar.classList.remove('translate-x-full', 'md:-mr-[400px]');
+            sidebar.classList.add('md:translate-x-0', 'md:mr-0');
+
+            // Mostrar Backdrop en móvil
+            if (window.innerWidth < 768) {
+                backdrop.classList.remove('hidden');
+                setTimeout(() => { backdrop.classList.remove('opacity-0'); }, 10);
+            }
+        }
+
+        function copyCode() {
+            const textToCopy = document.getElementById('detail-code').textContent;
+            const btn = document.getElementById('copy-btn');
+            
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                btn.innerHTML = '<span class="text-[10px] uppercase font-bold tracking-wider hidden sm:block text-green-400">¡Copiado!</span><i class="fas fa-check text-green-400 text-sm"></i>';
+                setTimeout(() => resetCopyButton(), 2000);
+            }).catch(err => console.error('Error al copiar: ', err));
+        }
+        
+        function resetCopyButton() {
+            const btn = document.getElementById('copy-btn');
+            btn.innerHTML = '<span class="text-[10px] uppercase font-bold tracking-wider hidden sm:block">Copiar</span><i class="fas fa-copy text-sm"></i>';
+        }
+    </script>
+</body>
+</html>
